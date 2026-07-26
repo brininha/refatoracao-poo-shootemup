@@ -548,6 +548,15 @@ public class Main {
 						}
 					}	
 				}
+
+				/* Nova lógica: */
+
+				/* if(GameLib.iskeyPressed(GameLib.KEY_CONTROL)) {
+					Projectile newShot = player.shoot(currentTime);
+					if (novoTiro != null) {
+						projectilesList.add(newShot);
+					}
+				} */
 			}
 			
 			if(GameLib.iskeyPressed(GameLib.KEY_ESCAPE)) running = false;
