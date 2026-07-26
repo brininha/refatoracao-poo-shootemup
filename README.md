@@ -127,25 +127,25 @@ Uma prova da eficiência dessa nova arquitetura foi a implementação do novo ob
 ## Funções de cada arquivo
 Com a separação das lógicas, o sistema foi modularizado nos seguintes arquivos:
 
-- **Main.java**: Orquestra o jogo. Inicializa as coleções de objetos, gerencia o laço de repetição contínuo e capta os comandos de teclado, repassando as ações para os objetos correspondentes.
+- **Main.java**: inicializa as coleções de objetos, gerencia o laço de repetição contínuo e capta os comandos de teclado, repassando as ações para os objetos correspondentes.
 
-- **GameLib.java**: Biblioteca gráfica de terceiros. Trata do desenho geométrico na tela e da interface, sem alterações em sua estrutura.
+- **GameLib.java**: biblioteca gráfica, trata do desenho geométrico na tela e da interface, sem alterações em sua estrutura.
 
-- **Entity.java**: Superclasse abstrata que fornece coordenadas e controles básicos de estado e física para todos os elementos visuais móveis do jogo.
+- **Entity.java**: superclasse abstrata que fornece coordenadas e controles básicos de estado e física para todos os elementos visuais móveis do jogo.
 
-- **Player.java**: Especialização da Entidade que contém a lógica de controle do usuário e regras para disparar projéteis aliados.
+- **Player.java**: especialização da entidade que contém a lógica de controle do usuário e regras para disparar projéteis.
 
-- **Enemy.java**: Superclasse abstrata que adiciona lógicas de movimentação angular e velocidades de rotação comuns aos adversários.
+- **Enemy.java**: superclasse abstrata que adiciona lógicas de movimentação e velocidades comuns aos adversários.
 
-- **EnemyType1.java**, **EnemyType2.java** e **EnemyType3.java**: Especializações de adversários, cada um contendo seu próprio critério (temporizador, posição na tela ou mecânica nova) para realizar disparos.
+- **EnemyType1.java**, **EnemyType2.java** e **EnemyType3.java**: especializações de adversários, cada um contendo seu próprio critério para realizar disparos.
 
-- **Projectile.java**: Classe responsável pela movimentação unidirecional e renderização dos tiros (tanto do jogador quanto dos inimigos).
+- **Projectile.java**: classe responsável pela movimentação e renderização dos tiros.
 
-- **Background.java**: Classe de suporte visual que cuida do cálculo do efeito de deslocamento do cenário (estrelas ao fundo) de maneira autônoma.
+- **Background.java**: classe de suporte visual que cuida do cálculo do efeito de deslocamento do cenário.
 
-- **Collision.java**: Classe puramente utilitária que concentra a fórmula matemática estática para validar sobreposições entre quaisquer duas entidades geométricas.
+- **Collision.java**: classe utilitária que concentra a fórmula matemática estática para validar sobreposições entre duas entidades geométricas.
 
 ## Repositório
 O histórico de commits e o código-fonte completo desta refatoração podem ser consultados no link abaixo:
 
-Link do repositório no GitHub: [Insira a URL do seu repositório aqui]
+Link do repositório no GitHub: https://github.com/brininha/refatoracao-poo-shootemup
