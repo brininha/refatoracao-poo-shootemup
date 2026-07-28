@@ -1,4 +1,4 @@
-public class FirstEnemy {
+public class EnemyType1 {
     
     private long nextShot;
 
@@ -11,6 +11,6 @@ public class FirstEnemy {
     }
 
     public void shoot(long currentTime){
-        
+
     }
 }
