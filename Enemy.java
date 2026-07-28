@@ -21,7 +21,6 @@ public abstract class Enemy {
         this.rv = rv;
     }
 
-    // Getter e Setter para 'exposionStart'
     public double getExposionStart() {
         return exposionStart;
     }
@@ -30,7 +29,6 @@ public abstract class Enemy {
         this.exposionStart = exposionStart;
     }
 
-    // Getter e Setter para 'exposionEnd'
     public double getExposionEnd() {
         return exposionEnd;
     }
@@ -38,4 +36,7 @@ public abstract class Enemy {
     public void setExposionEnd(double exposionEnd) {
         this.exposionEnd = exposionEnd;
     }
+
+    public abstract void shoot(long currentTime);
+    
 }
