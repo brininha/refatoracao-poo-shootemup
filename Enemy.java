@@ -70,10 +70,7 @@ public abstract class Enemy extends Entity {
 
             if (y > GameLib.HEIGHT + radius || x < -radius || x > GameLib.WIDTH + radius) {
                 state = INACTIVE;
-                return;
             }
-
-            shoot(currentTime);
         }
     }
 
@@ -97,7 +94,8 @@ public abstract class Enemy extends Entity {
         }
     }
 
-    public abstract void shoot(long currentTime);
-
     public abstract void drawShape();
+
+    public abstract Projectile shoot(long currentTime, double playerY, double previousY);
+
 }
