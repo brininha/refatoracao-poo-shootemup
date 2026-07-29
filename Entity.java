@@ -6,12 +6,8 @@ public abstract class Entity {
     protected double vy;
     protected double radius;
 
-    public void move(long delta) {
+    public abstract void move(long delta);
 
-    }
-
-    public void draw() {
-        
-    }
+    public abstract void draw();
 
 }
