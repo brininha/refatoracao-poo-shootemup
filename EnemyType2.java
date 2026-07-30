@@ -2,14 +2,18 @@ import java.awt.Color;
 
 public class EnemyType2 extends Enemy {
 
+    // construtor para satisfazer herança
+    public EnemyType2(double x, double y, double v, double angle, double rv) {
+        super(x, y, v, angle, rv, 12.0); 
+    }
+
     @Override
     public Projectile shoot(long currentTime, double playerY, double previousY) {
 
         double threshold = GameLib.HEIGHT * 0.30;
 
-        // ao cruzar a altura de referência, decide pra que lado vai curvar
-        if (previousY < threshold && y >= threshold) {
-            if (x < GameLib.WIDTH / 2) setRv(0.003);
+        if (previousY < threshold && this.y >= threshold) {
+            if (this.x < GameLib.WIDTH / 2) setRv(0.003);
             else setRv(-0.003);
         }
 
@@ -31,18 +35,15 @@ public class EnemyType2 extends Enemy {
 
         double a = Math.PI / 2 + Math.random() * Math.PI / 6 - Math.PI / 12;
 
-        Projectile p = new Projectile();
-        p.x = x;
-        p.y = y;
-        p.vx = Math.cos(a) * 0.30;
-        p.vy = Math.sin(a) * 0.30;
-        p.state = ACTIVE;
-        return p;
+        double projVx = Math.cos(a) * 0.30;
+        double projVy = Math.sin(a) * 0.30;
+
+        return new Projectile(this.x, this.y, projVx, projVy);
     }
 
     @Override
     public void drawShape() {
         GameLib.setColor(Color.MAGENTA);
-        GameLib.drawDiamond(x, y, radius);
+        GameLib.drawDiamond(this.x, this.y, this.radius);
     }
 }
