@@ -13,407 +13,215 @@ import java.util.List;
 /***********************************************************************/
 
 public class Main {
-	
-	/* Constantes relacionadas aos estados que os elementos   */
-	/* do jogo (player, projeteis ou inimigos) podem assumir. */
-	
-	public static final int INACTIVE = 0;
-	public static final int ACTIVE = 1;
-	public static final int EXPLODING = 2;
-	
-	/* Espera, sem fazer nada, até que o instante de tempo atual seja */
-	/* maior ou igual ao instante especificado no parâmetro "time.    */
-	
-	public static void busyWait(long time){
-		
-		while(System.currentTimeMillis() < time) Thread.yield();
-	}
-	
-	/* Encontra e devolve o primeiro índice do  */
-	/* array referente a uma posição "inativa". */
-	
-	public static int findFreeIndex(int [] stateArray){
-		
-		int i;
-		
-		for(i = 0; i < stateArray.length; i++){
-			
-			if(stateArray[i] == INACTIVE) break;
-		}
-		
-		return i;
-	}
-	
-	/* Método principal */
-	
-	public static void main(String [] args){
+    
+    /* Espera, sem fazer nada, até que o instante de tempo atual seja */
+    /* maior ou igual ao instante especificado no parâmetro "time.    */
+    public static void busyWait(long time){
+        while(System.currentTimeMillis() < time) Thread.yield();
+    }
+    
+    /* Método principal */
+    public static void main(String [] args){
 
-		/* Indica que o jogo está em execução */
+        /* Indica que o jogo está em execução */
+        boolean running = true;
 
-		boolean running = true;
+        /* variáveis usadas no controle de tempo efetuado no main loop */
+        long delta;
+        long currentTime = System.currentTimeMillis();
 
-		/* variáveis usadas no controle de tempo efetuado no main loop */
-		
-		long delta;
-		long currentTime = System.currentTimeMillis();
+        // instanciando o jogador
+        Player player = new Player(GameLib.WIDTH / 2.0, GameLib.HEIGHT * 0.90);
 
-		/* variáveis do player */
-		
-		int player_state = ACTIVE;						// estado
-		double player_X = GameLib.WIDTH / 2;					// coordenada x
-		double player_Y = GameLib.HEIGHT * 0.90;				// coordenada y
-		double player_VX = 0.25;						// velocidade no eixo x
-		double player_VY = 0.25;						// velocidade no eixo y
-		double player_radius = 12.0;						// raio (tamanho aproximado do player)
-		double player_explosion_start = 0;					// instante do início da explosão
-		double player_explosion_end = 0;					// instante do final da explosão
-		long player_nextShot = currentTime;					// instante a partir do qual pode haver um próximo tiro
+        // listas dinâmicas
+        List<Projectile> playerProjectiles = new ArrayList<>();
+        List<Enemy> enemies = new ArrayList<>();
+        List<Projectile> enemyProjectiles = new ArrayList<>();
 
-		/* variáveis dos projéteis disparados pelo player */
-		
-		int [] projectile_states = new int[10];					// estados
-		double [] projectile_X = new double[10];				// coordenadas x
-		double [] projectile_Y = new double[10];				// coordenadas y
-		double [] projectile_VX = new double[10];				// velocidades no eixo x
-		double [] projectile_VY = new double[10];				// velocidades no eixo y
+        long nextEnemy1 = currentTime + 2000;                   /* instante em que um novo inimigo 1 deve aparecer */
+        long nextEnemy2 = currentTime + 7000;                   /* instante em que um novo inimigo 2 deve aparecer */
+        
+        double enemy2_spawnX = GameLib.WIDTH * 0.20;            /* coordenada x do próximo inimigo tipo 2 a aparecer */
+        int enemy2_count = 0;                                   /* contagem de inimigos tipo 2 (usada na "formação de voo") */
+        
+        /* inicializações */
+        Background background1 = new Background(20, 0.070);
+        Background background2 = new Background(50, 0.045);
+                        
+        /* iniciado interface gráfica */
+        GameLib.initGraphics_SAFE_MODE(); 
+        
+        /*************************************************************************************************/
+        /*                                                                                               */
+        /* Main loop do jogo                                                                             */
+        /* -----------------                                                                             */
+        /*                                                                                               */
+        /* O main loop do jogo executa as seguintes operações:                                           */
+        /*                                                                                               */
+        /* 1) Verifica se há colisões e atualiza estados dos elementos conforme a necessidade.           */
+        /*                                                                                               */
+        /* 2) Atualiza estados dos elementos baseados no tempo que correu entre a última atualização     */
+        /*    e o timestamp atual: posição e orientação, execução de disparos de projéteis, etc.         */
+        /*                                                                                               */
+        /* 3) Processa entrada do usuário (teclado) e atualiza estados do player conforme a necessidade. */
+        /*                                                                                               */
+        /* 4) Desenha a cena, a partir dos estados dos elementos.                                        */
+        /*                                                                                               */
+        /* 5) Espera um período de tempo (de modo que delta seja aproximadamente sempre constante).      */
+        /*                                                                                               */
+        /*************************************************************************************************/
+        
+        while(running){
+        
+            /* Usada para atualizar o estado dos elementos do jogo    */
+            /* (player, projéteis e inimigos) "delta" indica quantos  */
+            /* ms se passaram desde a última atualização.             */
+            delta = System.currentTimeMillis() - currentTime;
+            
+            /* Já a variável "currentTime" nos dá o timestamp atual.  */
+            currentTime = System.currentTimeMillis();
+            
+            /***************************/
+            /* Verificação de colisões */
+            /***************************/
+                        
+            if(player.getState() == Entity.ACTIVE){
+                
+                /* colisões player - projeteis (inimigo) */
+                for(Projectile p : enemyProjectiles){
+                    double dx = p.getX() - player.getX();
+                    double dy = p.getY() - player.getY();
+                    double dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if(dist < (player.getRadius() + p.getRadius()) * 0.8){
+                        player.explode(currentTime);
+                    }
+                }
+            
+                /* colisões player - inimigos */
+                for(Enemy en : enemies){
+                    if(en.getState() == Entity.ACTIVE){
+                        double dx = en.getX() - player.getX();
+                        double dy = en.getY() - player.getY();
+                        double dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if(dist < (player.getRadius() + en.getRadius()) * 0.8){
+                            player.explode(currentTime);
+                        }
+                    }
+                }
+            }
+            
+            /* colisões projeteis (player) - inimigos */
+            for(Projectile p : playerProjectiles){
+                if(p.getState() == Entity.ACTIVE){
+                    for(Enemy en : enemies){
+                        if(en.getState() == Entity.ACTIVE){
+                            double dx = en.getX() - p.getX();
+                            double dy = en.getY() - p.getY();
+                            double dist = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if(dist < en.getRadius()){
+                                en.explode(currentTime);
+                                p.setState(Entity.INACTIVE);
+                            }
+                        }
+                    }
+                }
+            }
+                
+            /***************************/
+            /* Atualizações de estados */
+            /***************************/
+            
+            /* projeteis (player) */
+            for(Projectile p : playerProjectiles) p.move(delta);
+            playerProjectiles.removeIf(p -> p.getState() == Entity.INACTIVE);
+            
+            /* projeteis (inimigos) */
+            for(Projectile p : enemyProjectiles) p.move(delta);
+            enemyProjectiles.removeIf(p -> p.getState() == Entity.INACTIVE);
+            
+            // movimento e teclado do player
+            if(player.getState() == Entity.ACTIVE) {
+                player.move(delta); 
+                
+                if(GameLib.iskeyPressed(GameLib.KEY_CONTROL)) {
+                    Projectile p = player.shoot(currentTime);
+                    if (p != null) playerProjectiles.add(p);
+                }
+            } else if (player.getState() == Entity.EXPLODING) {
+                /* Verificando se a explosão do player já acabou.         */
+                /* Ao final da explosão, o player volta a ser controlável */
+                if(currentTime > player.getExplosionEnd()) { 
+                    player.setState(Entity.ACTIVE);
+                }
+            }
+            
+            /* inimigos (tipo 1 e tipo 2, via polimorfismo) */
+            for(Enemy en : enemies){
+                double previousY = en.getY();
+                en.move(delta);
+                
+                if(en.getState() == Entity.ACTIVE){
+                    Projectile p = en.shoot(currentTime, player.getY(), previousY);
+                    if(p != null) enemyProjectiles.add(p);
+                }
+            }
+            enemies.removeIf(en -> en.getState() == Entity.INACTIVE);
+            
+            /* verificando se novos inimigos (tipo 1) devem ser "lançados" */
+            if(currentTime > nextEnemy1){
+                double x = Math.random() * (GameLib.WIDTH - 20.0) + 10.0;
+                double v = 0.20 + Math.random() * 0.15;
+                enemies.add(new EnemyType1(x, -10.0, v, (3 * Math.PI) / 2, 0.0));
+                nextEnemy1 = currentTime + 500;
+            }
+            
+            /* verificando se novos inimigos (tipo 2) devem ser "lançados" */
+            if(currentTime > nextEnemy2){
+                enemies.add(new EnemyType2(enemy2_spawnX, -10.0, 0.42, (3 * Math.PI) / 2, 0.0));
+                enemy2_count++;
+                if(enemy2_count < 10){
+                    nextEnemy2 = currentTime + 120;
+                } else {
+                    enemy2_count = 0;
+                    enemy2_spawnX = Math.random() > 0.5 ? GameLib.WIDTH * 0.2 : GameLib.WIDTH * 0.8;
+                    nextEnemy2 = (long) (currentTime + 3000 + Math.random() * 3000);
+                }
+            }
+            
+            if(GameLib.iskeyPressed(GameLib.KEY_ESCAPE)) running = false;
 
-		/* ---------------------------------------------------------------- */
-		/* inimigos (tipo 1 e tipo 2) e projéteis lançados por eles agora   */
-		/* são representados por objetos, em vez de arrays paralelos.      */
-		/* ---------------------------------------------------------------- */
-
-		List<Enemy> enemies = new ArrayList<>();
-		List<Projectile> enemyProjectiles = new ArrayList<>();
-
-		long nextEnemy1 = currentTime + 2000;					// instante em que um novo inimigo 1 deve aparecer
-
-		double enemy2_spawnX = GameLib.WIDTH * 0.20;				// coordenada x do próximo inimigo tipo 2 a aparecer
-		int enemy2_count = 0;							// contagem de inimigos tipo 2 (usada na "formação de voo")
-		long nextEnemy2 = currentTime + 7000;					// instante em que um novo inimigo 2 deve aparecer
-		
-		/* inicializações */
-		
-		for(int i = 0; i < projectile_states.length; i++) projectile_states[i] = INACTIVE;
-		
-		Background background1 = new Background(20, 0.070);
-		Background background2 = new Background(50, 0.045);
-						
-		/* iniciado interface gráfica */
-		
-		//GameLib.initGraphics();
-		GameLib.initGraphics_SAFE_MODE();  // chame esta versão do método caso nada seja desenhado na janela do jogo.
-		
-		/*************************************************************************************************/
-		/*                                                                                               */
-		/* Main loop do jogo                                                                             */
-		/* -----------------                                                                             */
-		/*                                                                                               */
-		/* O main loop do jogo executa as seguintes operações:                                           */
-		/*                                                                                               */
-		/* 1) Verifica se há colisões e atualiza estados dos elementos conforme a necessidade.           */
-		/*                                                                                               */
-		/* 2) Atualiza estados dos elementos baseados no tempo que correu entre a última atualização     */
-		/*    e o timestamp atual: posição e orientação, execução de disparos de projéteis, etc.         */
-		/*                                                                                               */
-		/* 3) Processa entrada do usuário (teclado) e atualiza estados do player conforme a necessidade. */
-		/*                                                                                               */
-		/* 4) Desenha a cena, a partir dos estados dos elementos.                                        */
-		/*                                                                                               */
-		/* 5) Espera um período de tempo (de modo que delta seja aproximadamente sempre constante).      */
-		/*                                                                                               */
-		/*************************************************************************************************/
-		
-		while(running){
-		
-			/* Usada para atualizar o estado dos elementos do jogo    */
-			/* (player, projéteis e inimigos) "delta" indica quantos  */
-			/* ms se passaram desde a última atualização.             */
-			
-			delta = System.currentTimeMillis() - currentTime;
-			
-			/* Já a variável "currentTime" nos dá o timestamp atual.  */
-			
-			currentTime = System.currentTimeMillis();
-			
-			/***************************/
-			/* Verificação de colisões */
-			/***************************/
-						
-			if(player_state == ACTIVE){
-				
-				/* colisões player - projeteis (inimigo) */
-				
-				for(Projectile p : enemyProjectiles){
-					
-					double dx = p.x - player_X;
-					double dy = p.y - player_Y;
-					double dist = Math.sqrt(dx * dx + dy * dy);
-					
-					if(dist < (player_radius + p.radius) * 0.8){
-						
-						player_state = EXPLODING;
-						player_explosion_start = currentTime;
-						player_explosion_end = currentTime + 2000;
-					}
-				}
-			
-				/* colisões player - inimigos */
-							
-				for(Enemy en : enemies){
-					
-					if(en.state == ACTIVE){
-						
-						double dx = en.x - player_X;
-						double dy = en.y - player_Y;
-						double dist = Math.sqrt(dx * dx + dy * dy);
-						
-						if(dist < (player_radius + en.radius) * 0.8){
-							
-							player_state = EXPLODING;
-							player_explosion_start = currentTime;
-							player_explosion_end = currentTime + 2000;
-						}
-					}
-				}
-			}
-			
-			/* colisões projeteis (player) - inimigos */
-			
-			for(int k = 0; k < projectile_states.length; k++){
-				
-				if(projectile_states[k] == ACTIVE){
-				
-					for(Enemy en : enemies){
-											
-						if(en.state == ACTIVE){
-						
-							double dx = en.x - projectile_X[k];
-							double dy = en.y - projectile_Y[k];
-							double dist = Math.sqrt(dx * dx + dy * dy);
-							
-							if(dist < en.radius){
-								
-								en.explode(currentTime);
-							}
-						}
-					}
-				}
-			}
-				
-			/***************************/
-			/* Atualizações de estados */
-			/***************************/
-			
-			/* projeteis (player) */
-			
-			for(int i = 0; i < projectile_states.length; i++){
-				
-				if(projectile_states[i] == ACTIVE){
-					
-					/* verificando se projétil saiu da tela */
-					if(projectile_Y[i] < 0) {
-						
-						projectile_states[i] = INACTIVE;
-					}
-					else {
-					
-						projectile_X[i] += projectile_VX[i] * delta;
-						projectile_Y[i] += projectile_VY[i] * delta;
-					}
-				}
-			}
-			
-			/* projeteis (inimigos) */
-			
-			for(Projectile p : enemyProjectiles){
-				
-				p.move(delta);
-			}
-			
-			enemyProjectiles.removeIf(p -> p.state == INACTIVE);
-			
-			/* inimigos (tipo 1 e tipo 2, via polimorfismo) */
-			
-			for(Enemy en : enemies){
-				
-				double previousY = en.y;
-				
-				en.move(delta);
-				
-				if(en.state == ACTIVE){
-					
-					Projectile p = en.shoot(currentTime, player_Y, previousY);
-					
-					if(p != null){
-						
-						enemyProjectiles.add(p);
-					}
-				}
-			}
-			
-			enemies.removeIf(en -> en.state == INACTIVE);
-			
-			/* verificando se novos inimigos (tipo 1) devem ser "lançados" */
-			
-			if(currentTime > nextEnemy1){
-				
-				EnemyType1 e = new EnemyType1();
-				
-				e.x = Math.random() * (GameLib.WIDTH - 20.0) + 10.0;
-				e.y = -10.0;
-				e.radius = 9.0;
-				e.setV(0.20 + Math.random() * 0.15);
-				e.setAngle((3 * Math.PI) / 2);
-				e.setRv(0.0);
-				e.state = ACTIVE;
-				e.setNextShot(currentTime + 500);
-				
-				enemies.add(e);
-				
-				nextEnemy1 = currentTime + 500;
-			}
-			
-			/* verificando se novos inimigos (tipo 2) devem ser "lançados" */
-			
-			if(currentTime > nextEnemy2){
-				
-				EnemyType2 e = new EnemyType2();
-				
-				e.x = enemy2_spawnX;
-				e.y = -10.0;
-				e.radius = 12.0;
-				e.setV(0.42);
-				e.setAngle((3 * Math.PI) / 2);
-				e.setRv(0.0);
-				e.state = ACTIVE;
-				
-				enemies.add(e);
-
-				enemy2_count++;
-				
-				if(enemy2_count < 10){
-					
-					nextEnemy2 = currentTime + 120;
-				}
-				else {
-					
-					enemy2_count = 0;
-					enemy2_spawnX = Math.random() > 0.5 ? GameLib.WIDTH * 0.2 : GameLib.WIDTH * 0.8;
-					nextEnemy2 = (long) (currentTime + 3000 + Math.random() * 3000);
-				}
-			}
-			
-			/* Verificando se a explosão do player já acabou.         */
-			/* Ao final da explosão, o player volta a ser controlável */
-			if(player_state == EXPLODING){
-				
-				if(currentTime > player_explosion_end){
-					
-					player_state = ACTIVE;
-				}
-			}
-			
-			/********************************************/
-			/* Verificando entrada do usuário (teclado) */
-			/********************************************/
-			
-			if(player_state == ACTIVE){
-				
-				if(GameLib.iskeyPressed(GameLib.KEY_UP)) player_Y -= delta * player_VY;
-				if(GameLib.iskeyPressed(GameLib.KEY_DOWN)) player_Y += delta * player_VY;
-				if(GameLib.iskeyPressed(GameLib.KEY_LEFT)) player_X -= delta * player_VX;
-				if(GameLib.iskeyPressed(GameLib.KEY_RIGHT)) player_X += delta * player_VY;
-				
-				if(GameLib.iskeyPressed(GameLib.KEY_CONTROL)) {
-					
-					if(currentTime > player_nextShot){
-						
-						int free = findFreeIndex(projectile_states);
-												
-						if(free < projectile_states.length){
-							
-							projectile_X[free] = player_X;
-							projectile_Y[free] = player_Y - 2 * player_radius;
-							projectile_VX[free] = 0.0;
-							projectile_VY[free] = -1.0;
-							projectile_states[free] = ACTIVE;
-							player_nextShot = currentTime + 100;
-						}
-					}	
-				}
-			}
-			
-			if(GameLib.iskeyPressed(GameLib.KEY_ESCAPE)) running = false;
-			
-			/* Verificando se coordenadas do player ainda estão dentro */
-			/* da tela de jogo após processar entrada do usuário.      */
-			
-			if(player_X < 0.0) player_X = 0.0;
-			if(player_X >= GameLib.WIDTH) player_X = GameLib.WIDTH - 1;
-			if(player_Y < 25.0) player_Y = 25.0;
-			if(player_Y >= GameLib.HEIGHT) player_Y = GameLib.HEIGHT - 1;
-
-			/*******************/
-			/* Desenho da cena */
-			/*******************/
-			
-			/* desenhando plano fundo próximo e distante */
-			
-			background1.update(delta);
-			background1.draw();
-
-			background2.update(delta);
-			background2.draw();
-						
-			/* desenhando player */
-			
-			if(player_state == EXPLODING){
-				
-				double alpha = (currentTime - player_explosion_start) / (player_explosion_end - player_explosion_start);
-				GameLib.drawExplosion(player_X, player_Y, alpha);
-			}
-			else{
-				
-				GameLib.setColor(Color.BLUE);
-				GameLib.drawPlayer(player_X, player_Y, player_radius);
-			}
-				
-			/* deenhando projeteis (player) */
-			
-			for(int i = 0; i < projectile_states.length; i++){
-				
-				if(projectile_states[i] == ACTIVE){
-					
-					GameLib.setColor(Color.GREEN);
-					GameLib.drawLine(projectile_X[i], projectile_Y[i] - 5, projectile_X[i], projectile_Y[i] + 5);
-					GameLib.drawLine(projectile_X[i] - 1, projectile_Y[i] - 3, projectile_X[i] - 1, projectile_Y[i] + 3);
-					GameLib.drawLine(projectile_X[i] + 1, projectile_Y[i] - 3, projectile_X[i] + 1, projectile_Y[i] + 3);
-				}
-			}
-			
-			/* desenhando projeteis (inimigos) */
-		
-			for(Projectile p : enemyProjectiles){
-				
-				p.draw();
-			}
-			
-			/* desenhando inimigos (tipo 1 e tipo 2, via polimorfismo) */
-			
-			for(Enemy en : enemies){
-				
-				en.draw();
-			}
-			
-			/* chamada a display() da classe GameLib atualiza o desenho exibido pela interface do jogo. */
-			
-			GameLib.display();
-			
-			/* faz uma pausa de modo que cada execução do laço do main loop demore aproximadamente 3 ms. */
-			
-			busyWait(currentTime + 3);
-		}
-		
-		System.exit(0);
-	}
+            /*******************/
+            /* Desenho da cena */
+            /*******************/
+            
+            /* desenhando plano fundo próximo e distante */
+            background1.update(delta);
+            background1.draw();
+            background2.update(delta);
+            background2.draw();
+                        
+            /* desenhando player */
+            player.draw(currentTime);
+            
+            /* deenhando projeteis (player) */
+            for(Projectile p : playerProjectiles) p.draw(currentTime);
+            
+            /* desenhando projeteis (inimigos) */
+            for(Projectile p : enemyProjectiles) p.draw(currentTime);
+            
+            /* desenhando inimigos (tipo 1 e tipo 2, via polimorfismo) */
+            for(Enemy en : enemies) en.draw(currentTime);
+            
+            /* chamada a display() da classe GameLib atualiza o desenho exibido pela interface do jogo. */
+            GameLib.display();
+            
+            /* faz uma pausa de modo que cada execução do laço do main loop demore aproximadamente 3 ms. */
+            busyWait(currentTime + 3);
+        }
+        
+        System.exit(0);
+    }
 }
