@@ -40,6 +40,7 @@ public class Main {
 
         long nextEnemy1 = currentTime + 2000;                   /* instante em que um novo inimigo 1 deve aparecer */
         long nextEnemy2 = currentTime + 7000;                   /* instante em que um novo inimigo 2 deve aparecer */
+        long nextEnemy3 = currentTime + 12000;                 /* instante em que um novo inimigo 3 deve aparecer */
         
         double enemy2_spawnX = GameLib.WIDTH * 0.20;            /* coordenada x do próximo inimigo tipo 2 a aparecer */
         int enemy2_count = 0;                                   /* contagem de inimigos tipo 2 (usada na "formação de voo") */
@@ -189,6 +190,14 @@ public class Main {
                     enemy2_spawnX = Math.random() > 0.5 ? GameLib.WIDTH * 0.2 : GameLib.WIDTH * 0.8;
                     nextEnemy2 = (long) (currentTime + 3000 + Math.random() * 3000);
                 }
+            }
+            
+            /* verificando se novos inimigos (tipo 3) devem ser "lançados" */
+            if(currentTime > nextEnemy3){
+                double x = Math.random() * (GameLib.WIDTH - 40.0) + 20.0;
+                double v = 0.08 + Math.random() * 0.05;
+                enemies.add(new EnemyType3(x, -20.0, v, (3 * Math.PI) / 2, 0.0));
+                nextEnemy3 = currentTime + 8000 + (long)(Math.random() * 4000);
             }
             
             if(GameLib.iskeyPressed(GameLib.KEY_ESCAPE)) running = false;
