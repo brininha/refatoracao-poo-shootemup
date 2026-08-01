@@ -2,7 +2,6 @@ import java.awt.Color;
 
 public class EnemyType3 extends Enemy {
 
-    private double rotation;
     private Color color;
 
     public EnemyType3(double x, double y, double v, double angle, double rv) {
@@ -10,7 +9,6 @@ public class EnemyType3 extends Enemy {
         // tamanho e cor aleatórios
         double r = 10.0 + Math.random() * 25.0; // raio entre 10 e 35
         this.radius = r;
-        this.rotation = 0.0;
 
         Color[] palette = new Color[] {
             new Color(198, 108, 58),   // marrom
@@ -57,7 +55,6 @@ public class EnemyType3 extends Enemy {
         if (state == ACTIVE) {
             x += getV() * Math.cos(getAngle()) * delta;
             y += getV() * Math.sin(getAngle()) * delta * (-1.0);
-            rotation += 0.002 * delta;
 
             if (y > GameLib.HEIGHT + radius) {
                 y = -radius;

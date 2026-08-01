@@ -96,6 +96,8 @@ public class Main {
                     
                     if(dist < (player.getRadius() + p.getRadius()) * 0.8){
                         player.explode(currentTime);
+                        p.setState(Entity.INACTIVE); // desativa o tiro inimigo
+                        break;
                     }
                 }
             
@@ -108,6 +110,8 @@ public class Main {
                         
                         if(dist < (player.getRadius() + en.getRadius()) * 0.8){
                             player.explode(currentTime);
+                            en.explode(currentTime);
+                            break;
                         }
                     }
                 }
@@ -125,6 +129,7 @@ public class Main {
                             if(dist < en.getRadius()){
                                 en.explode(currentTime);
                                 p.setState(Entity.INACTIVE);
+                                break;
                             }
                         }
                     }
